@@ -13,11 +13,9 @@ module R2d2
     client = GeminiClient.new(ENV["GEMINI_API_KEY"])
     puts "R2d2 is starting..."
     loop do
-      print "\nPlease enter your problem (or type 'exit' to quit): "
+      print "\n > "
       input = gets.chomp
-
-      puts "\n--- Problem Solving Session ---"
-      puts "User Input: #{input}"
+      break if input.downcase == "exit"
 
       messages = client.chat(input)
       messages.each do |message|

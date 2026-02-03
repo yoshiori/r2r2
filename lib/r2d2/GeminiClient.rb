@@ -25,7 +25,6 @@ class GeminiClient
                                          contents: contents,
                                          system_instruction: { parts: { text: PROMPT } }
                                        })
-    p response
     response["candidates"].each do |candidate|
       candidate.dig("content", "parts").each do |part|
         messages << part["text"]
