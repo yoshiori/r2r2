@@ -1,5 +1,7 @@
 require "gemini-ai"
 
+require_relative "tools/read_file"
+
 class GeminiClient
   # https://gist.github.com/iinm/892b10427ca71bbd9f83707b9b95c181#file-agent-mjs-L20-L32
   PROMPT = "
@@ -16,19 +18,62 @@ class GeminiClient
   def initialize(api_key)
     @api_key = api_key
     @history = []
+    @tools = {
+      function_declarations: [
+        {
+          name: "read_file",
+          description: "Read the contents of a file at the given path. " \
+               "Use this to understand code, gather context, or inspect files " \
+               "before answering questions or making decisions.",
+          parameters: {
+            type: "object",
+            properties: {
+              path: {
+                type: "string",
+                description: "The relative file path from the current working directory"
+              }
+            },
+            required: ["path"]
+          }
+        }
+      ]
+    }
   end
 
   def chat(text)
+    @history << { role: "user", parts: { text: text } }
+    generate
+  end
+
+  private
+
+  def generate
     messages = []
-    contents = @history << { role: "user", parts: { text: text } }
     response = gemini.generate_content({
-                                         contents: contents,
+                                         contents: @history,
+                                         tools: @tools,
                                          system_instruction: { parts: { text: PROMPT } }
                                        })
     response["candidates"].each do |candidate|
-      candidate.dig("content", "parts").each do |part|
-        messages << part["text"]
-        @history << { role: "model", parts: { text: part["text"] } }
+      parts = candidate.dig("content", "parts")
+      @history << { role: "model", parts: parts }
+
+      function_response = []
+      parts.each do |part|
+        if part["functionCall"]
+          name = part["functionCall"]["name"]
+          args = part["functionCall"]["args"]
+
+          result = ReadFile.new.execute(args["path"])
+          function_response << { functionResponse: { name: name, response: { result: result } } }
+        else
+          messages << part["text"]
+        end
+      end
+
+      unless function_response.empty?
+        @history << { role: "user", parts: function_response }
+        messages.concat(generate)
       end
     end
     messages
