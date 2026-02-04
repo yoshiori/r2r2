@@ -4,7 +4,7 @@ require "dotenv/load"
 require "gemini-ai"
 
 require_relative "r2d2/version"
-require_relative "r2d2/GeminiClient"
+require_relative "r2d2/gemini_client"
 
 module R2d2
   class Error < StandardError; end
