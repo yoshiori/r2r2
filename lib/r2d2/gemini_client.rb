@@ -15,68 +15,59 @@ class GeminiClient
   - Users specify file paths relative to the current working directory.
   ".strip
 
+  TOOLS = [
+    ReadFile
+  ].freeze
+
   def initialize(api_key)
     @api_key = api_key
     @history = []
-    @tools = {
-      function_declarations: [
-        {
-          name: "read_file",
-          description: "Read the contents of a file at the given path. " \
-               "Use this to understand code, gather context, or inspect files " \
-               "before answering questions or making decisions.",
-          parameters: {
-            type: "object",
-            properties: {
-              path: {
-                type: "string",
-                description: "The relative file path from the current working directory"
-              }
-            },
-            required: ["path"]
-          }
-        }
-      ]
+    @tools = TOOLS.to_h { |tool| [tool.name, tool.new] }
+    @function_declarations = {
+      function_declarations: TOOLS.map(&:definition)
     }
   end
 
-  def chat(text)
+  def chat(text, &block)
     @history << { role: "user", parts: { text: text } }
-    generate
+    generate(&block)
   end
 
   private
 
-  def generate
-    messages = []
+  def generate(&block)
     response = gemini.generate_content({
                                          contents: @history,
-                                         tools: @tools,
+                                         tools: @function_declarations,
                                          system_instruction: { parts: { text: PROMPT } }
                                        })
     response["candidates"].each do |candidate|
       parts = candidate.dig("content", "parts")
       @history << { role: "model", parts: parts }
+      process_parts(parts, &block)
+    end
+  end
 
-      function_response = []
-      parts.each do |part|
-        if part["functionCall"]
-          name = part["functionCall"]["name"]
-          args = part["functionCall"]["args"]
-
-          result = ReadFile.new.execute(args["path"])
-          function_response << { functionResponse: { name: name, response: { result: result } } }
-        else
-          messages << part["text"]
-        end
-      end
-
-      unless function_response.empty?
-        @history << { role: "user", parts: function_response }
-        messages.concat(generate)
+  def process_parts(parts, &block)
+    function_response = []
+    parts.each do |part|
+      if part["functionCall"]
+        function_response << execute_function(part["functionCall"])
+      else
+        yield part["text"]
       end
     end
-    messages
+    return if function_response.empty?
+
+    @history << { role: "user", parts: function_response }
+    generate(&block)
+  end
+
+  def execute_function(function_call)
+    name = function_call["name"]
+    args = function_call["args"]
+    result = @tools[name].execute(**args.transform_keys(&:to_sym))
+    { functionResponse: { name: name, response: { result: result } } }
   end
 
   def gemini

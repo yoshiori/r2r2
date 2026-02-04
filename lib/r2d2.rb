@@ -11,15 +11,14 @@ module R2d2
 
   def self.start(_args)
     client = GeminiClient.new(ENV["GEMINI_API_KEY"])
-    puts "R2d2 is starting..."
+    puts "R2D2 is starting..."
     loop do
       print "\n > "
       input = gets.chomp
       break if input.downcase == "exit"
 
-      messages = client.chat(input)
-      messages.each do |message|
-        puts "R2d2: #{message}"
+      client.chat(input) do |message|
+        puts "R2D2: #{message}"
       end
     end
     puts "--- End of Session ---\n"
