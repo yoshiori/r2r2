@@ -62,6 +62,10 @@ class GeminiClient
       @history << { role: "model", parts: parts }
       process_parts(parts, &block)
     end
+  rescue Faraday::TooManyRequestsError
+    puts "\e[2m[Rate limit hit, retrying in 5s...]\e[0m"
+    sleep 5
+    retry
   end
 
   def process_parts(parts, &block)
@@ -82,6 +86,7 @@ class GeminiClient
   def execute_function(function_call)
     name = function_call["name"]
     args = function_call["args"]
+    puts "\e[2m[#{name}] #{args}\e[0m"
     result = @tools[name].execute(**args.transform_keys(&:to_sym))
     { functionResponse: { name: name, response: { result: result } } }
   end
