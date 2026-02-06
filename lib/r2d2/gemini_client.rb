@@ -3,6 +3,7 @@ require "rainbow"
 require "logger"
 
 require_relative "tools/read_file"
+require_relative "tools/write_file"
 require_relative "tools/exec_command"
 
 class GeminiClient
@@ -34,6 +35,7 @@ class GeminiClient
 
   TOOLS = [
     ReadFile,
+    WriteFile,
     ExecCommand
   ].freeze
 
