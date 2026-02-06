@@ -1,4 +1,5 @@
 require "gemini-ai"
+require "rainbow"
 
 require_relative "tools/read_file"
 require_relative "tools/exec_command"
@@ -63,7 +64,7 @@ class GeminiClient
       process_parts(parts, &block)
     end
   rescue Faraday::TooManyRequestsError
-    puts "\e[2m[Rate limit hit, retrying in 5s...]\e[0m"
+    puts Rainbow("[Rate limit hit, retrying in 5s...]").faint
     sleep 5
     retry
   end
@@ -86,7 +87,7 @@ class GeminiClient
   def execute_function(function_call)
     name = function_call["name"]
     args = function_call["args"]
-    puts "\e[2m[#{name}] #{args}\e[0m"
+    puts Rainbow("[#{name}] #{args}").faint
     result = @tools[name].execute(**args.transform_keys(&:to_sym))
     { functionResponse: { name: name, response: { result: result } } }
   end

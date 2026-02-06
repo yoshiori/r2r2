@@ -4,6 +4,7 @@ PATH
     r2d2 (0.1.0)
       dotenv
       gemini-ai
+      rainbow
 
 GEM
   remote: https://rubygems.org/
