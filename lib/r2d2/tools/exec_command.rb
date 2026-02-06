@@ -36,6 +36,6 @@ class ExecCommand
 
   def execute(command:, args: [])
     output, status = Open3.capture2e(command, *args)
-    output
+    "exit_code: #{status.exitstatus}\n#{output}"
   end
 end

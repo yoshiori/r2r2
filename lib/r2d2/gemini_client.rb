@@ -88,7 +88,11 @@ class GeminiClient
     name = function_call["name"]
     args = function_call["args"]
     puts Rainbow("[#{name}] #{args}").faint
-    result = @tools[name].execute(**args.transform_keys(&:to_sym))
+    begin
+      result = @tools[name].execute(**args.transform_keys(&:to_sym))
+    rescue StandardError => e
+      result = "Error: #{e.message}"
+    end
     { functionResponse: { name: name, response: { result: result } } }
   end
 
