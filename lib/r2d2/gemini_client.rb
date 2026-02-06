@@ -1,5 +1,6 @@
 require "gemini-ai"
 require "rainbow"
+require "logger"
 
 require_relative "tools/read_file"
 require_relative "tools/exec_command"
@@ -43,6 +44,7 @@ class GeminiClient
     @function_declarations = {
       function_declarations: TOOLS.map(&:definition)
     }
+    @logger = Logger.new($stderr, level: ENV["R2D2_DEBUG"] ? Logger::DEBUG : Logger::FATAL)
   end
 
   def chat(text, &block)
@@ -58,6 +60,9 @@ class GeminiClient
                                          tools: @function_declarations,
                                          system_instruction: { parts: { text: PROMPT } }
                                        })
+
+    @logger.debug { JSON.pretty_generate(response) }
+
     response["candidates"].each do |candidate|
       parts = candidate.dig("content", "parts")
       @history << { role: "model", parts: parts }
@@ -93,6 +98,7 @@ class GeminiClient
     rescue StandardError => e
       result = "Error: #{e.message}"
     end
+    @logger.debug { "Tool result: #{result}" }
     { functionResponse: { name: name, response: { result: result } } }
   end
 
