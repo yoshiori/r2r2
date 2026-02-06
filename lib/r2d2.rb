@@ -17,7 +17,7 @@ module R2d2
     client = GeminiClient.new(ENV["GEMINI_API_KEY"])
     puts Rainbow("R2D2 is starting...").bright.cyan
     loop do
-      print "\n > "
+      print Rainbow("\n❯ ").bright.cyan
       input = gets.chomp
       break if input.downcase == "exit"
 
