@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ReadFile
   def self.name
     "read_file"

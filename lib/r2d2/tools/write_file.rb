@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class WriteFile
   def self.name
     "write_file"
