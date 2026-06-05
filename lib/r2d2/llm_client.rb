@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "openai"
 require "rainbow"
 require "logger"
